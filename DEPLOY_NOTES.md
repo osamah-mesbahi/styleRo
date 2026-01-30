@@ -27,6 +27,8 @@ Set these in Render → Environment:
 
 **Optional (enable features)**
 - CORS_ORIGIN (comma-separated allowed origins). For GitHub Pages use: https://osamah-mesbahi.github.io
+
+GitHub Pages URL (current): https://osamah-mesbahi.github.io/styleRo/
 - FIREBASE_SERVICE_ACCOUNT_PATH (if uploading JSON file) OR
   - FIREBASE_PROJECT_ID
   - FIREBASE_CLIENT_EMAIL
