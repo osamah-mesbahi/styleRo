@@ -54,6 +54,7 @@ export interface User {
   email: string;
   phone?: string;
   address?: string;
+  isAdmin?: boolean;
 }
 
 export type PaymentMethod = 'COD' | 'KURIMI' | 'WALLET' | 'TRANSFER';

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from './Button';
 import { Lock, ArrowLeft, User as UserIcon, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
-import { fetchJson } from '../src/api';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../src/firebase';
+import { getUserProfile } from '../services/firestoreService';
 
 interface AdminLoginProps {
   onLogin: () => void;
@@ -70,21 +72,36 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onCancel, langu
     setLoading(true);
 
     try {
-      const res = await fetchJson('/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password })
-      });
-      if (res?.error) throw new Error(res.error);
-      if (res?.token) localStorage.setItem('stylero_token', res.token);
-      if (res?.user) localStorage.setItem('stylero_user', JSON.stringify(res.user));
-      localStorage.setItem('stylero_is_admin', res?.user?.isAdmin ? '1' : '0');
+      // Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // Get Firestore profile
+      const profile = await getUserProfile(firebaseUser.uid);
+
+      // Check if user is admin
+      if (!profile?.isAdmin) {
+        setError(txt.errors.authFailed);
+        setLoading(false);
+        return;
+      }
+
+      // Store admin session
+      localStorage.setItem('stylero_user', JSON.stringify({
+        id: firebaseUser.uid,
+        name: profile.name || 'Admin',
+        email: firebaseUser.email,
+        isAdmin: true
+      }));
+      localStorage.setItem('stylero_is_admin', '1');
+      
       onLogin();
     } catch (err: any) {
       console.error('Admin login error:', err.message || err);
       const msg = String(err?.message || '').toLowerCase();
       if (msg.includes('network') || msg.includes('failed to fetch')) setError(txt.errors.network);
-      else setError(txt.errors.invalid);
+      else if (msg.includes('user-not-found') || msg.includes('wrong-password')) setError(txt.errors.invalid);
+      else setError(txt.errors.authFailed);
     } finally {
       setLoading(false);
     }
