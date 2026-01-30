@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Button } from './Button';
 import { User, Mail, Lock, Phone, MapPin, ArrowLeft, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { User as UserType } from '../types';
-import { fetchJson } from '../src/api';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../src/firebase';
+import { createUserProfile, getUserProfile } from '../services/firestoreService';
 
 interface UserLoginProps {
   onLogin: (user: UserType) => void;
@@ -85,68 +87,63 @@ export const UserLogin: React.FC<UserLoginProps> = ({ onLogin, onCancel, onAdmin
 
     try {
       if (isRegistering) {
-        if (!formData.name || !formData.password || !formData.phone || !formData.address) {
+        if (!formData.name || !formData.email || !formData.password || !formData.phone) {
           setError(txt.errorFill);
           setIsLoading(false);
           return;
         }
 
-        const res = await fetchJson('/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email || undefined,
-            phone: formData.phone,
-            password: formData.password
-          })
-        });
+        if (formData.password.length < 6) {
+          setError(txt.errorWeak);
+          setIsLoading(false);
+          return;
+        }
 
-        if (res?.error) throw new Error(res.error);
+        // Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        const firebaseUser = userCredential.user;
+
+        // Create Firestore profile
+        await createUserProfile(firebaseUser.uid, {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address
+        });
 
         const newUser: UserType = {
-          id: String(res.user?.id || ''),
-          name: res.user?.name || formData.name,
-          email: res.user?.email || formData.email || '',
-          phone: res.user?.phone || formData.phone,
+          id: firebaseUser.uid,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
           address: formData.address
         };
 
-        if (res?.token) localStorage.setItem('stylero_token', res.token);
         localStorage.setItem('stylero_user', JSON.stringify(newUser));
-        localStorage.setItem('stylero_is_admin', res.user?.isAdmin ? '1' : '0');
         onLogin(newUser);
       } else {
-        const identifier = formData.email || formData.phone;
-        if (!identifier || !formData.password) {
+        if (!formData.email || !formData.password) {
           setError(txt.errorFill);
           setIsLoading(false);
           return;
         }
-        const isEmail = identifier.includes('@');
-        const res = await fetchJson('/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: isEmail ? identifier : undefined,
-            phone: !isEmail ? identifier : undefined,
-            password: formData.password
-          })
-        });
 
-        if (res?.error) throw new Error(res.error);
+        // Firebase Authentication
+        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        const firebaseUser = userCredential.user;
+
+        // Get Firestore profile
+        const profile = await getUserProfile(firebaseUser.uid);
 
         const loggedIn: UserType = {
-          id: String(res.user?.id || ''),
-          name: res.user?.name || formData.name || 'User',
-          email: res.user?.email || (isEmail ? identifier : ''),
-          phone: res.user?.phone || (!isEmail ? identifier : ''),
-          address: formData.address
+          id: firebaseUser.uid,
+          name: profile?.name || formData.name || 'User',
+          email: firebaseUser.email || formData.email,
+          phone: profile?.phone || formData.phone || '',
+          address: profile?.address || formData.address || ''
         };
 
-        if (res?.token) localStorage.setItem('stylero_token', res.token);
         localStorage.setItem('stylero_user', JSON.stringify(loggedIn));
-        localStorage.setItem('stylero_is_admin', res.user?.isAdmin ? '1' : '0');
         onLogin(loggedIn);
       }
     } catch (err: any) {
