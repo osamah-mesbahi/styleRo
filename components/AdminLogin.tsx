@@ -76,20 +76,24 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onCancel, langu
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
-      // Get Firestore profile
-      const profile = await getUserProfile(firebaseUser.uid);
-
-      // Check if user is admin
-      if (!profile?.isAdmin) {
+      // Check if user is admin (authorized admin email)
+      const authorizedAdmins = ['admin@stylero.online'];
+      if (!authorizedAdmins.includes(firebaseUser.email || '')) {
         setError(txt.errors.authFailed);
         setLoading(false);
         return;
       }
 
+      // Get Firestore profile or create basic profile
+      let profile = await getUserProfile(firebaseUser.uid);
+      if (!profile) {
+        profile = { name: 'مدير', email: firebaseUser.email };
+      }
+
       // Store admin session
       localStorage.setItem('stylero_user', JSON.stringify({
         id: firebaseUser.uid,
-        name: profile.name || 'Admin',
+        name: profile.name || 'مدير',
         email: firebaseUser.email,
         isAdmin: true
       }));
