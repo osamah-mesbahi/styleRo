@@ -10,4 +10,4 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  VITE_API_BASE_URL = "https://stylero-backend.onrender.com"
+  VITE_API_BASE_URL = "https://api.stylero.online"

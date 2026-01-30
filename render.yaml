@@ -22,6 +22,6 @@ services:
       - key: ADMIN_PASSWORD
         generateValue: true
       - key: BASE_URL
-        value: https://stylero-backend.onrender.com
+        value: https://api.stylero.online
       - key: CORS_ORIGIN
-        value: https://osamah-mesbahi.github.io
+        value: https://stylero.online
