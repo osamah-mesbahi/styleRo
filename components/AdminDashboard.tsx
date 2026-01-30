@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Product, StoreSettings, Order } from '../types';
 import { Button } from './Button';
 import AddProduct from './AddProduct';
+import { createProduct, updateProduct, getProducts, updateOrderStatus } from '../services/firestoreService';
 
 import {
   Package, Settings, LogOut, Trash2, Save,

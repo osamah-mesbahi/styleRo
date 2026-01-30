@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Sparkles, ArrowRight
+  Sparkles, ArrowRight, Loader2
 } from 'lucide-react';
 import { MAIN_CATEGORIES as DEFAULT_CATEGORIES } from '../constants';
 import { StoreSettings, Product } from '../types';
 import CategoriesSection from '../components/CategoriesSection';
+import { getProducts } from '../services/firestoreService';
 
 interface HomeProps {
   settings: StoreSettings;
@@ -15,6 +16,7 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({ settings }) => {
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [banners, setBanners] = useState(settings.banners || []);
   const [bannerIndex, setBannerIndex] = useState(0);
   const placeholderImg = 'https://via.placeholder.com/600x800?text=No+Image';
@@ -35,10 +37,20 @@ const Home: React.FC<HomeProps> = ({ settings }) => {
     const savedCats = safeParse<any[]>('stylero_categories', DEFAULT_CATEGORIES);
     setCategories(savedCats);
     
-    const savedProducts = safeParse<Product[]>('stylero_products', []);
-    if (savedProducts.length) setProducts(savedProducts.slice(0, 15));
+    setLoading(true);
+    getProducts(15).then(result => {
+      setProducts(result.products);
+      localStorage.setItem('stylero_products', JSON.stringify(result.products));
+      setLoading(false);
+    }).catch(err => {
+      console.error('Error loading products:', err);
+      const savedProducts = safeParse<Product[]>('stylero_products', []);
+      if (savedProducts.length) setProducts(savedProducts.slice(0, 15));
+      setLoading(false);
+    });
+    
     if (settings.banners) setBanners(settings.banners);
-  }, []);
+  }, [settings]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pb-24" dir="rtl">

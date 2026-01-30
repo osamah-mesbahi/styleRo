@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ShoppingCart, Heart, Loader2, Beaker, Palette, Ruler, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { Currency, Product, StoreSettings } from '../types';
 import { SAR_TO_YER_RATE, MAIN_CATEGORIES as DEFAULT_CATEGORIES } from '../constants';
-import { fetchProductsFromFirestore, subscribeProductsFromFirestore } from '../firebase';
+import { getProducts, searchProducts } from '../services/firestoreService';
 
 interface ShopProps {
   currency: Currency;
@@ -83,22 +83,12 @@ const Shop: React.FC<ShopProps> = ({ currency, addToCart, settings, selectedCate
 
   useEffect(() => {
     setLoading(true);
-    const unsub = subscribeProductsFromFirestore((items) => {
-      setProducts(items as any);
-      localStorage.setItem('stylero_products', JSON.stringify(items));
+    getProducts(100).then(result => {
+      setProducts(result.products);
+      localStorage.setItem('stylero_products', JSON.stringify(result.products));
       setLoading(false);
-    });
-
-    fetchProductsFromFirestore().then(cloud => {
-      if (Array.isArray(cloud) && cloud.length) {
-        setProducts(cloud as any);
-        localStorage.setItem('stylero_products', JSON.stringify(cloud));
-      } else {
-        const savedProducts = safeParse<Product[]>('stylero_products', []);
-        if (savedProducts.length) setProducts(savedProducts);
-      }
-      setLoading(false);
-    }).catch(() => {
+    }).catch(err => {
+      console.error('Error loading products:', err);
       const savedProducts = safeParse<Product[]>('stylero_products', []);
       if (savedProducts.length) setProducts(savedProducts);
       setLoading(false);
@@ -106,8 +96,6 @@ const Shop: React.FC<ShopProps> = ({ currency, addToCart, settings, selectedCate
 
     const savedCats = safeParse<any[]>('stylero_categories', DEFAULT_CATEGORIES);
     setCategories(savedCats);
-
-    return () => { try { unsub(); } catch (e) {} };
   }, []);
 
   useEffect(() => {

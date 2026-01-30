@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Minus, Plus, ShoppingBag, ArrowRight, Banknote, Landmark, Smartphone, CreditCard, Trash2, MapPin, User, Phone, CheckCircle2, Copy } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, ArrowRight, Banknote, Landmark, Smartphone, CreditCard, Trash2, MapPin, User, Phone, CheckCircle2, Copy, Loader2 } from 'lucide-react';
 import { CartItem, PaymentMethod, DeliveryRule, User as UserType, Order, StoreSettings } from '../types';
 import { Button } from './Button';
-import { addOrderToDb } from '../services/db';
+import { createOrder } from '../services/firestoreService';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -77,26 +77,32 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     }
     setIsPlacingOrder(true);
     const orderId = `ORD-${Date.now()}`;
-    const newOrder: Order = {
-        id: orderId,
-        userId: user?.id,
-        date: new Date().toISOString(),
-        items: [...items],
-        total: total,
-        status: 'Pending',
-        paymentMethod: paymentMethod,
-        customer: { ...shippingInfo, city: selectedCity },
-        deliveryFee: deliveryFee
-    };
-
+    
     try {
-        await addOrderToDb(newOrder);
+        await createOrder(user?.id || 'guest', {
+            items: items.map(item => ({
+                productId: item.id,
+                quantity: item.quantity,
+                price: item.discountPrice && item.discountPrice > 0 ? item.discountPrice : item.price,
+                name: item.name
+            })),
+            total: total,
+            shippingAddress: {
+                name: shippingInfo.name,
+                phone: shippingInfo.phone,
+                address: shippingInfo.address,
+                city: selectedCity
+            },
+            paymentMethod: paymentMethod,
+            deliveryFee: deliveryFee
+        });
         setLastOrderId(orderId);
         setStep('success');
         onClearCart();
         onOrderSuccess();
     } catch (e) {
-        alert("Error placing order. Please try again.");
+        console.error('Error creating order:', e);
+        alert(isRtl ? "حدث خطأ أثناء إنشاء الطلب" : "Error placing order. Please try again.");
     } finally {
         setIsPlacingOrder(false);
     }
