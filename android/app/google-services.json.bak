@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "405893791296",
+    "project_id": "stylero-6dddd",
+    "storage_bucket": "stylero-6dddd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:405893791296:android:c4b3617c14366180f029a5",
+        "android_client_info": {
+          "package_name": "stylero.online"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA70vcCNscvVNdEiYSZryhx_6s3uxlHRSs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

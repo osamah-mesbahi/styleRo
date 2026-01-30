@@ -1,0 +1,130 @@
+{
+  "name": "Stylero",
+  "currency": "YER",
+  "exchangeRate": 140,
+  "logo": "",
+  "colors": {
+    "primary": "#583c3c",
+    "accent": "#80b7ff"
+  },
+  "socialMedia": {
+    "facebook": "https://facebook.com",
+    "instagram": "https://instagram.com",
+    "whatsapp": "https://wa.me/967772728311",
+    "twitter": "",
+    "email": "stylero.online@gmail.com"
+  },
+  "paymentInstructions": {
+    "kurimi": {
+      "name": "اسامه المصباحي",
+      "account": "3007692314"
+    },
+    "wallet": {
+      "name": "اسامه المصباحي",
+      "number": "419137 / 772728311",
+      "type": "جيب / جوالي / فلوسك / كاش"
+    }
+  },
+  "paymentMethods": [],
+  "storeCategories": [
+    {
+      "id": "1",
+      "name": "Makeup",
+      "nameAr": "مكياج",
+      "image": "https://images.unsplash.com/photo-1596462502278-27bfdd403cc2?auto=format&fit=crop&q=80&w=200",
+      "branches": [
+        "Face",
+        "Eyes",
+        "Lips"
+      ],
+      "branchesAr": [
+        "وجه",
+        "عيون",
+        "شفاه"
+      ]
+    },
+    {
+      "id": "2",
+      "name": "Perfume",
+      "nameAr": "عطور",
+      "image": "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=200",
+      "branches": [
+        "Men",
+        "Women",
+        "Oud"
+      ],
+      "branchesAr": [
+        "رجالي",
+        "نسائي",
+        "عود"
+      ]
+    },
+    {
+      "id": "3",
+      "name": "عطور",
+      "nameAr": "عطور عساف",
+      "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=200",
+      "branches": [
+        "Skin",
+        "Hair",
+        "Body"
+      ],
+      "branchesAr": [
+        "بشرة",
+        "شعر",
+        "جسم"
+      ]
+    },
+    {
+      "id": "1769636599195",
+      "name": "New",
+      "nameAr": "ملابس",
+      "image": "",
+      "branches": [],
+      "branchesAr": []
+    }
+  ],
+  "globalStores": [
+    {
+      "id": "1769626169139",
+      "name": "shein",
+      "image": "",
+      "url": ""
+    }
+  ],
+  "deliveryRules": [
+    {
+      "city": "Sana'a",
+      "cityAr": "صنعاء",
+      "fee": 1000,
+      "depositRequired": true,
+      "depositPercentage": 70,
+      "active": true
+    },
+    {
+      "city": "Aden",
+      "cityAr": "عدن",
+      "fee": 2000,
+      "depositRequired": false,
+      "depositPercentage": 70,
+      "active": false
+    }
+  ],
+  "sections": {
+    "hero": {
+      "enabled": true,
+      "title": "Summer Beauty Sale",
+      "subtitle": "Up to 50% off on premium brands",
+      "image": "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=1920"
+    },
+    "categories": {
+      "enabled": false,
+      "womenImage": "",
+      "menImage": ""
+    },
+    "featured": {
+      "enabled": false,
+      "title": "Best Sellers"
+    }
+  }
+}

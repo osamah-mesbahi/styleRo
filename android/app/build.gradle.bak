@@ -1,0 +1,86 @@
+import { initializeApp } from 'firebase/app';
+import { getAnalytics } from 'firebase/analytics';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, signInWithPhoneNumber, RecaptchaVerifier } from 'firebase/auth';
+
+// Provide your Firebase config via Vite env variables (VITE_FIREBASE_*), with sensible defaults
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDuAqmcoZ2KoiF65dRuH9JIfVLTShBGrK0',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'stylero-74eb8.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'stylero-74eb8',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'stylero-74eb8.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '721015415335',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:721015415335:web:18be9a3599afdb62dc6402',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-CCWNXEF5Y2',
+};
+
+const app = initializeApp(firebaseConfig);
+try { getAnalytics(app); } catch (e) { /* analytics optional */ }
+
+let messaging = null;
+// Detect if running on a native Capacitor platform (android / ios)
+export function isNativePlatform() {
+  try {
+    // @ts-ignore
+    if (typeof window === 'undefined') return false;
+    // @ts-ignore
+    const cap = window.Capacitor;
+    // Capacitor exposes getPlatform() which returns 'web' for web runtime
+    // We treat any non-'web' as native (android / ios)
+    // @ts-ignore
+    return !!(cap && typeof cap.getPlatform === 'function' && cap.getPlatform() !== 'web');
+  } catch (e) { return false; }
+}
+
+let messaging = null;
+try {
+  if (!isNativePlatform() && typeof window !== 'undefined') messaging = getMessaging(app);
+} catch (e) { console.warn('firebase messaging init failed', e && e.message); }
+
+// Initialize native push (Capacitor) handlers dynamically. Safe no-op on web.
+export async function initNativePushHandlers(onRegistration?: (token: string) => void, onNotification?: (payload: any) => void) {
+  try {
+    // @ts-ignore
+    if (typeof window === 'undefined' || !window.Capacitor) return false;
+    const capPlatform = window.Capacitor && window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : 'web';
+    if (capPlatform === 'web') return false;
+
+    // dynamic import so web bundlers won't fail if plugin missing
+    const { PushNotifications } = await import('@capacitor/push-notifications');
+
+    const perm = await PushNotifications.requestPermissions();
+    if (perm.receive === 'granted') {
+      await PushNotifications.register();
+    }
+
+    PushNotifications.addListener('registration', (token: any) => {
+      try { if (onRegistration) onRegistration(token?.value || token?.token || ''); } catch (e) { /* ignore */ }
+    });
+
+    PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
+      try { if (onNotification) onNotification(notification); } catch (e) { /* ignore */ }
+    });
+
+    PushNotifications.addListener('pushNotificationActionPerformed', (action: any) => {
+      try { if (onNotification) onNotification(action); } catch (e) { /* ignore */ }
+    });
+
+    return true;
+  } catch (e) {
+    console.warn('initNativePushHandlers failed', e && e.message);
+    return false;
+  }
+}
+
+// Auth
+let auth = null;
+try {
+  if (typeof window !== 'undefined') auth = getAuth(app);
+} catch (e) { console.warn('firebase auth init failed', e && e.message); }
+
+export async function firebaseRegisterWithPhone(phone: string, password: string) {
+  if (!auth) throw new Error('Firebase auth not initialized');
+  const email = `${phone}@stylero.local`;
+  const userCred = await createUserWithEmailAndPassword(auth, email, password);
+  return userCred.user;
+}

@@ -1,0 +1,52 @@
+# Deployment Environment Variables
+
+## Netlify (Frontend)
+Set these in Netlify → Site settings → Environment variables:
+
+**Required**
+- VITE_API_BASE_URL = https://stylero-backend.onrender.com
+- VITE_GEMINI_API_KEY
+- VITE_FIREBASE_API_KEY
+- VITE_FIREBASE_AUTH_DOMAIN
+- VITE_FIREBASE_PROJECT_ID
+- VITE_FIREBASE_STORAGE_BUCKET
+- VITE_FIREBASE_MESSAGING_SENDER_ID
+- VITE_FIREBASE_APP_ID
+- VITE_FIREBASE_MEASUREMENT_ID
+- VITE_FIREBASE_VAPID_KEY
+
+## Render (Backend)
+Set these in Render → Environment:
+
+**Required**
+- DATABASE_URL = file:/var/data/stylero.db
+- JWT_SECRET
+- ADMIN_USERNAME
+- ADMIN_PASSWORD
+- BASE_URL = https://stylero-backend.onrender.com
+
+**Optional (enable features)**
+- CORS_ORIGIN (comma-separated allowed origins). For GitHub Pages use: https://osamah-mesbahi.github.io
+- FIREBASE_SERVICE_ACCOUNT_PATH (if uploading JSON file) OR
+  - FIREBASE_PROJECT_ID
+  - FIREBASE_CLIENT_EMAIL
+  - FIREBASE_PRIVATE_KEY
+- SMTP_HOST
+- SMTP_PORT
+- SMTP_USER
+- SMTP_PASS
+- NOTIFY_FROM
+- TELEGRAM_BOT_TOKEN
+- TELEGRAM_CHAT_ID
+- TWILIO_ACCOUNT_SID
+- TWILIO_AUTH_TOKEN
+- TWILIO_FROM_SMS
+- TWILIO_WHATSAPP_FROM
+- STRIPE_SECRET
+- KURAIMI_API_URL
+- KURAIMI_API_KEY
+- KURAIMI_WEBHOOK_SECRET
+- KURAIMI_CONTACT_NAME
+- KURAIMI_CONTACT_PHONE
+- KURAIMI_ACCOUNT_KURAIMI
+- KURAIMI_ACCOUNT_SAHADI

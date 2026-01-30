@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "721015415335",
+    "project_id": "stylero-74eb8",
+    "storage_bucket": "stylero-74eb8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:721015415335:android:751b3d29a43081b7dc6402",
+        "android_client_info": {
+          "package_name": "STYLERO.ONLINE"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "721015415335-sddmkr2psqrg3hrrpqs4i40e3o86aih5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "STYLERO.ONLINE",
+            "certificate_hash": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+          }
+        },
+        {
+          "client_id": "721015415335-h75rmrddn7hmkis04em4u2m2uc86o2br.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDme8yUp-xy3vqcAh_BFbvq8HPUG8_lEz4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "721015415335-3c78n8mmlrnqis59s8lrei7jnqnfhtvs.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "721015415335-tikuf9dvq8buklcpaftg7b5obteaeoh2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": ".com.stylero.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

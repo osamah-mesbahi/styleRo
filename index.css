@@ -1,0 +1,14 @@
+/* Global styles loaded by index.html and Vite */
+:root {
+  font-family: 'Cairo', sans-serif;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}

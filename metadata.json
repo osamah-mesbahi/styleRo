@@ -1,0 +1,11 @@
+{
+  "name": "Stylero.online",
+  "description": "A modern, minimalist fashion e-commerce platform featuring an AI-powered personal stylist assistant.",
+  "requestFramePermissions": [],
+  "deployment": {
+    "platform": "netlify",
+    "environment_variables": [
+      "API_KEY"
+    ]
+  }
+}
