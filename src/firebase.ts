@@ -23,7 +23,7 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId
 
 const app = initializeApp(firebaseConfig);
 try { if (typeof window !== 'undefined') getAnalytics(app); } catch { /* ignore */ }
-const db = getFirestore(app);
+export const db = getFirestore(app);
 
 import type { Messaging } from 'firebase/messaging';
 import type { Auth } from 'firebase/auth';
