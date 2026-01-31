@@ -76,11 +76,7 @@ export async function initNativePushHandlers(onRegistration?: (token: string) =>
   }
 }
 
-// Auth
-let auth: Auth | null = null;
-try {
-  if (typeof window !== 'undefined') auth = getAuth(app);
-} catch (e) { console.warn('firebase auth init failed', e && (e as any).message); }
+// Auth is already initialized above
 
 export async function firebaseRegisterWithPhone(phone: string, password: string) {
   if (!auth) throw new Error('Firebase auth not initialized');

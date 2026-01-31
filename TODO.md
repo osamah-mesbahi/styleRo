@@ -11,6 +11,10 @@
 - [x] Update types.ts to include Banner interface and banners in StoreSettings
 - [x] Add volumes property to Product interface
 - [x] Add Currency type to types.ts
+- [x] Create Shop component with banner rotation and product filtering
+- [x] Fix duplicate auth declaration in firebase.ts
+- [x] Add missing firestore functions (getStoreSettings, saveStoreSettings, getAllOrders)
+- [x] Remove duplicate script tag in index.html
 
 ## Summary
 The advertisement (banners) section has been successfully moved from the Home page to the Shop page, positioned after the category bar and before the products grid. The Shop component has been integrated into App.tsx to display the banners in the SHOP view.

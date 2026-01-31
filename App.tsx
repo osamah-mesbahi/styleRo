@@ -10,8 +10,12 @@ import { ProductDetails } from './components/ProductDetails';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { UserLogin } from './components/UserLogin';
+import Shop from './components/Shop';
 import Footer from './components/Footer';
 import { authFetch } from './src/api';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, firebaseSignOut } from './src/firebase';
+import { getUserProfile } from './services/firestoreService';
 import { initializeChat } from './services/geminiService';
 import { PHONE as SUPPORT_PHONE } from './constants';
 import { 
@@ -187,6 +191,36 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+      if (!fbUser) {
+        setUser(null);
+        setIsAdmin(false);
+        localStorage.removeItem('stylero_user');
+        localStorage.removeItem('stylero_is_admin');
+        return;
+      }
+
+      const profile = await getUserProfile(fbUser.uid).catch(() => null);
+      const isAdminEmail = (fbUser.email || '').toLowerCase() === 'admin@stylero.online';
+      const nextUser = {
+        id: fbUser.uid,
+        name: profile?.name || fbUser.displayName || 'User',
+        email: fbUser.email || '',
+        phone: profile?.phone || '',
+        address: profile?.address || '',
+        isAdmin: Boolean(profile?.isAdmin || isAdminEmail)
+      } as UserType;
+
+      setUser(nextUser);
+      setIsAdmin(Boolean(nextUser.isAdmin));
+      localStorage.setItem('stylero_user', JSON.stringify(nextUser));
+      localStorage.setItem('stylero_is_admin', nextUser.isAdmin ? '1' : '0');
+    });
+
+    return () => unsub();
+  }, []);
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -347,6 +381,7 @@ export const App: React.FC = () => {
 
   if (view === 'ADMIN_LOGIN') return <AdminLogin onLogin={() => { setIsAdmin(true); setView('ADMIN_DASHBOARD'); }} onCancel={() => setView('HOME')} language={language} />;
   const handleLogout = () => {
+    firebaseSignOut();
     localStorage.removeItem('stylero_token');
     localStorage.removeItem('stylero_user');
     localStorage.removeItem('stylero_is_admin');
