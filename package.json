@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "android:add": "npx cap add android",
+    "android:prepare": "npm run build && npx cap copy android",
+    "android:open": "npx cap open android",
+    "android:build": "npm run build && npx cap copy android && npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.2",
