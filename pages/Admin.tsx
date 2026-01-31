@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
    Plus, Trash2, Edit, LayoutDashboard, 
    Search, ShoppingBag, DollarSign,
-   Image as ImageIcon, X, Package, Clock, Store, Layers, Settings as SettingsIcon, Monitor, TrendingUp, Tag, Upload, Phone, User as UserIcon, MessageCircle, Link as LinkIcon, Instagram, Type, ExternalLink, Key, RefreshCw, ChevronDown, SlidersHorizontal
+   Image as ImageIcon, X, Package, Clock, Store, Layers, Settings as SettingsIcon, Monitor, TrendingUp, Tag, Upload, Phone, User as UserIcon, MessageCircle, Link as LinkIcon, Instagram, Type, ExternalLink, Key, RefreshCw, ChevronDown, SlidersHorizontal,
+   Sparkles, Boxes, ClipboardList, Layers3, Bell, UsersRound, Settings2
 } from 'lucide-react';
 import { Product, ExternalStore, Order, OrderStatus, StoreSettings, DeliveryFee, Banner } from '../types';
 import { 
@@ -14,8 +15,16 @@ import {
    SAR_TO_YER_RATE
 } from '../constants';
 import UserList from '../components/admin/UserList';
-import { fetchJson, authFetch } from '../src/api';
 import { fetchProductsFromFirestore, subscribeProductsFromFirestore, upsertProductToFirestore, deleteProductFromFirestore } from '../firebase';
+import {
+   getAllOrders,
+   getNotifications,
+   markAllNotificationsRead,
+   markNotificationRead,
+   deleteNotification,
+   createNotification,
+   saveStoreSettings
+} from '../services/firestoreService';
 
 interface AdminProps {
   currentSettings: StoreSettings;
@@ -86,17 +95,15 @@ const Admin: React.FC<AdminProps> = ({ currentSettings, onSettingsUpdate }) => {
     seoTitle: '', seoDescription: '', sku: '', barcode: '', manufacturer: '', warranty: '', countryOfOrigin: '',
     minOrderQuantity: 1, maxOrderQuantity: 10, isActive: true, isFeatured: false, isNewArrival: false, isOnSale: false,
     saleStartDate: '', saleEndDate: '', relatedProducts: [], crossSellProducts: [], upSellProducts: [], customFields: {}
-  });
-  const [storeForm, setStoreForm] = useState<ExternalStore>({ name: '', logo: '', url: '' });
-  const [categoryForm, setCategoryForm] = useState({ name: '', image: '', icon: '', parent: '', sub: [] });
-
-   useEffect(() => {
-      const token = localStorage.getItem('stylero_token');
-
-      const unsub = subscribeProductsFromFirestore((items) => {
-         setProducts(items as any);
-         localStorage.setItem('stylero_products', JSON.stringify(items));
-         setFsOnline(true);
+                 [
+              {id: 'dashboard', label: 'الإحصائيات', icon: Sparkles},
+              {id: 'inventory', label: 'المخزون', icon: Boxes},
+              {id: 'orders', label: 'الطلبات', icon: ClipboardList},
+              {id: 'categories', label: 'الأقسام', icon: Layers3},
+              {id: 'notifications', label: 'الإشعارات', icon: Bell},
+              {id: 'users', label: 'المستخدمون', icon: UsersRound},
+              {id: 'settings', label: 'الإعدادات', icon: Settings2}
+            ].map(tab => (
          setLastFsSync(new Date().toISOString());
       });
 
@@ -110,13 +117,11 @@ const Admin: React.FC<AdminProps> = ({ currentSettings, onSettingsUpdate }) => {
          }
       }).catch(() => {
          setFsOnline(false);
-         fetchJson('/products').then(data => { if (Array.isArray(data)) { setProducts(data); localStorage.setItem('stylero_products', JSON.stringify(data)); } }).catch(() => {
-            const saved = localStorage.getItem('stylero_products'); if (saved) setProducts(JSON.parse(saved));
-         });
+         const saved = localStorage.getItem('stylero_products'); if (saved) setProducts(JSON.parse(saved));
       });
 
       // fetch admin orders
-      fetchJson('/admin/orders').then(data => { if (Array.isArray(data)) setOrders(data); }).catch(() => {
+      getAllOrders().then(data => { if (Array.isArray(data)) { setOrders(data as any); localStorage.setItem('stylero_orders', JSON.stringify(data)); } }).catch(() => {
          const savedOrders = localStorage.getItem('stylero_orders'); if (savedOrders) setOrders(JSON.parse(savedOrders));
       });
 
@@ -128,10 +133,7 @@ const Admin: React.FC<AdminProps> = ({ currentSettings, onSettingsUpdate }) => {
       setCategories(savedCats ? JSON.parse(savedCats) : DEFAULT_CATEGORIES);
 
       // fetch notifications (admin)
-      fetchJson('/notifications?admin=1').then(j => { if (j && Array.isArray(j.items)) setNotifications(j.items); }).catch(() => {});
-
-      // fetch users (admin)
-      fetchJson('/admin/users').then(data => { if (Array.isArray(data)) { /* store or ignore until users tab */ } }).catch(() => {});
+      getNotifications().then(items => { if (Array.isArray(items)) setNotifications(items); }).catch(() => {});
 
       const user = JSON.parse(localStorage.getItem('stylero_user') || '{}');
       if (user && user.isAdmin) setIsAuthenticated(true);
@@ -144,16 +146,10 @@ const Admin: React.FC<AdminProps> = ({ currentSettings, onSettingsUpdate }) => {
     window.dispatchEvent(new Event('storage'));
   };
 
-  const handleSettingsSave = () => {
+   const handleSettingsSave = () => {
     onSettingsUpdate(tempSettings);
       localStorage.setItem('stylero_settings', JSON.stringify(tempSettings));
-      // store admin key on server if token available
-      try {
-         const token = localStorage.getItem('stylero_token');
-         if (token && tempSettings.adminApiKey) {
-            fetch('/admin/store-key', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ apiKey: tempSettings.adminApiKey }) }).catch(e => console.error(e));
-         }
-      } catch (e) {}
+         saveStoreSettings(tempSettings).catch(() => {});
     alert('تم حفظ كافة إعدادات المتجر بنجاح ✨');
   };
 
@@ -176,6 +172,7 @@ const Admin: React.FC<AdminProps> = ({ currentSettings, onSettingsUpdate }) => {
       setTempSettings(restored);
       onSettingsUpdate(restored);
       localStorage.setItem('stylero_settings', JSON.stringify(restored));
+         saveStoreSettings(restored).catch(() => {});
       alert('تمت إعادة الإعدادات الافتراضية بنجاح ✅');
    };
 
@@ -369,12 +366,18 @@ const Admin: React.FC<AdminProps> = ({ currentSettings, onSettingsUpdate }) => {
                <h3 className="font-extrabold text-xl mb-4">إدارة الإشعارات</h3>
                <div className="flex gap-3 mb-4">
                   <button onClick={async () => {
-                     const res = await authFetch('/dev/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'اختبار من لوحة التحكم', message: 'هذه رسالة اختبار' }) });
-                     if (res.ok) alert('تم إرسال إشعار تجريبي');
+                     try {
+                        await createNotification({ title: 'اختبار من لوحة التحكم', message: 'هذه رسالة اختبار' });
+                        const items = await getNotifications();
+                        setNotifications(items || []);
+                        alert('تم إرسال إشعار تجريبي');
+                     } catch {
+                        alert('تعذر إرسال الإشعار');
+                     }
                   }} className="btn-primary px-4 py-2">إرسال إشعار تجريبي</button>
                   <button onClick={async () => {
-                     const res = await authFetch('/notifications/mark-all-read', { method: 'POST' });
-                     if (res.ok) { setNotifications(n => n.map(x => ({ ...x, isRead: true }))); alert('تم وسم كل الإشعارات كمقروءة'); }
+                     const ok = await markAllNotificationsRead();
+                     if (ok) { setNotifications(n => n.map(x => ({ ...x, isRead: true }))); alert('تم وسم كل الإشعارات كمقروءة'); }
                   }} className="btn-secondary px-4 py-2">وضع الكل كمقروء</button>
                </div>
                <div className="space-y-3">
@@ -388,8 +391,8 @@ const Admin: React.FC<AdminProps> = ({ currentSettings, onSettingsUpdate }) => {
                               <div className="text-[10px] text-gray-400 mt-2">{new Date(n.createdAt).toLocaleString()}</div>
                            </div>
                            <div className="flex flex-col gap-2">
-                                {!n.isRead && <button onClick={async () => { const r = await authFetch(`/notifications/${n.id}/read`, { method: 'POST' }); if (r.ok) setNotifications(ns => ns.map(x => x.id === n.id ? { ...x, isRead: true } : x)); }} className="px-3 py-1 btn-primary text-[12px]">تم</button>}
-                                <button onClick={async () => { if (!confirm('حذف الإشعار نهائياً؟')) return; const r = await authFetch(`/notifications/${n.id}`, { method: 'DELETE' }); if (r.ok) setNotifications(ns => ns.filter(x => x.id !== n.id)); }} className="px-3 py-1 btn-secondary text-[12px]">حذف</button>
+                                {!n.isRead && <button onClick={async () => { const ok = await markNotificationRead(n.id); if (ok) setNotifications(ns => ns.map(x => x.id === n.id ? { ...x, isRead: true } : x)); }} className="px-3 py-1 btn-primary text-[12px]">تم</button>}
+                                <button onClick={async () => { if (!confirm('حذف الإشعار نهائياً؟')) return; const ok = await deleteNotification(n.id); if (ok) setNotifications(ns => ns.filter(x => x.id !== n.id)); }} className="px-3 py-1 btn-secondary text-[12px]">حذف</button>
                            </div>
                         </div>
                      </div>

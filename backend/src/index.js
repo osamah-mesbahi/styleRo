@@ -42,7 +42,7 @@ let firebaseAdmin = null;
 let getMessagingFn = null;
 try {
   // prefer modular imports when available
-  const { initializeApp, cert } = require('firebase-admin/app');
+  const { initializeApp, cert, getApps, getApp } = require('firebase-admin/app');
   const { getMessaging } = require('firebase-admin/messaging');
   const adminCompat = require('firebase-admin');
 
@@ -56,13 +56,33 @@ try {
     svcPath = path.join(__dirname, '..', 'firebase-service-account.json');
   }
 
-  if (fs.existsSync(svcPath)) {
-    adminApp = initializeApp({ credential: cert(require(svcPath)) });
-    console.log('Firebase Admin (modular) initialized from', svcPath);
-  } else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
-    const key = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-    adminApp = initializeApp({ credential: cert({ projectId: process.env.FIREBASE_PROJECT_ID, clientEmail: process.env.FIREBASE_CLIENT_EMAIL, privateKey: key }) });
-    console.log('Firebase Admin (modular) initialized from env variables');
+  try {
+    if (fs.existsSync(svcPath)) {
+      if (!getApps || getApps().length === 0) {
+        adminApp = initializeApp({ credential: cert(require(svcPath)) });
+      } else {
+        adminApp = getApp();
+      }
+      console.log('Firebase Admin (modular) initialized from', svcPath);
+    } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
+      if (!getApps || getApps().length === 0) {
+        adminApp = initializeApp();
+      } else {
+        adminApp = getApp();
+      }
+      console.log('Firebase Admin (modular) initialized via GOOGLE_APPLICATION_CREDENTIALS');
+    } else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+      const key = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+      if (!getApps || getApps().length === 0) {
+        adminApp = initializeApp({ credential: cert({ projectId: process.env.FIREBASE_PROJECT_ID, clientEmail: process.env.FIREBASE_CLIENT_EMAIL, privateKey: key }) });
+      } else {
+        adminApp = getApp();
+      }
+      console.log('Firebase Admin (modular) initialized from env variables');
+    }
+  } catch (initErr) {
+    console.warn('Failed to initialize modular firebase-admin:', initErr && initErr.message);
+    throw initErr;
   }
 
   // prefer modular getMessaging bound to the initialized app
@@ -75,17 +95,32 @@ try {
     const rawSvcPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
     let svcPath = rawSvcPath ? (path.isAbsolute(rawSvcPath) ? rawSvcPath : path.resolve(path.join(__dirname, '..', rawSvcPath))) : path.join(__dirname, '..', 'firebase-service-account.json');
     if (fs.existsSync(svcPath)) {
-      adminApp = firebaseAdmin.initializeApp({ credential: firebaseAdmin.credential.cert(require(svcPath)) });
+      if (!firebaseAdmin.getApps || firebaseAdmin.getApps().length === 0) {
+        adminApp = firebaseAdmin.initializeApp({ credential: firebaseAdmin.credential.cert(require(svcPath)) });
+      } else {
+        adminApp = firebaseAdmin.getApp();
+      }
       console.log('Firebase Admin initialized from', svcPath);
+    } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
+      if (!firebaseAdmin.getApps || firebaseAdmin.getApps().length === 0) {
+        adminApp = firebaseAdmin.initializeApp();
+      } else {
+        adminApp = firebaseAdmin.getApp();
+      }
+      console.log('Firebase Admin initialized via GOOGLE_APPLICATION_CREDENTIALS');
     } else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
       const key = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-      adminApp = firebaseAdmin.initializeApp({ credential: firebaseAdmin.credential.cert({ projectId: process.env.FIREBASE_PROJECT_ID, clientEmail: process.env.FIREBASE_CLIENT_EMAIL, privateKey: key }) });
+      if (!firebaseAdmin.getApps || firebaseAdmin.getApps().length === 0) {
+        adminApp = firebaseAdmin.initializeApp({ credential: firebaseAdmin.credential.cert({ projectId: process.env.FIREBASE_PROJECT_ID, clientEmail: process.env.FIREBASE_CLIENT_EMAIL, privateKey: key }) });
+      } else {
+        adminApp = firebaseAdmin.getApp();
+      }
       console.log('Firebase Admin initialized from env variables');
     }
     // compat messaging
     getMessagingFn = (app) => firebaseAdmin.messaging(app);
   } catch (err) {
-    console.warn('firebase-admin not available or init failed', err.message || e.message);
+    console.warn('firebase-admin not available or init failed', err && err.message);
   }
 }
 

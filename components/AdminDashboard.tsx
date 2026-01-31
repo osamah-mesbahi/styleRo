@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Product, StoreSettings, Order } from '../types';
 import { Button } from './Button';
 import AddProduct from './AddProduct';
-import { createProduct, updateProduct, getProducts, updateOrderStatus } from '../services/firestoreService';
 
 import {
   Package, Settings, LogOut, Trash2, Save,
@@ -10,7 +9,8 @@ import {
   LayoutDashboard, ShoppingBag,
   Facebook, Instagram, Twitter, MessageCircle, Mail,
   Store, Palette, Share2, Upload, Link as LinkIcon,
-  ToggleLeft, ToggleRight, Banknote, Grid
+  ToggleLeft, ToggleRight, Banknote, Grid,
+  Sparkles, Boxes, ClipboardList, Layers3, Settings2
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -88,57 +88,84 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   }[language];
 
-  const updateLocalSettings = (path: string, value: any) => {
-    const newSettings = { ...localSettings };
+  const getNestedValue = (obj: any, path: string) => {
     const keys = path.split('.');
-    let current: any = newSettings;
+    let current: any = obj;
+    for (let i = 0; i < keys.length; i++) {
+      if (current == null) return undefined;
+      current = current[keys[i]];
+    }
+    return current;
+  };
+
+  const setNestedValue = (obj: any, path: string, value: any) => {
+    const keys = path.split('.');
+    let current: any = obj;
     for (let i = 0; i < keys.length - 1; i++) {
-        if (!current[keys[i]]) current[keys[i]] = {};
-        current = current[keys[i]];
+      const key = keys[i];
+      if (!current[key] || typeof current[key] !== 'object') current[key] = {};
+      current = current[key];
     }
     current[keys[keys.length - 1]] = value;
-    setLocalSettings(newSettings);
+  };
+
+  const updateLocalSettings = (path: string, value: any) => {
+    setLocalSettings(prev => {
+      const next = { ...prev } as any;
+      setNestedValue(next, path, value);
+      return next;
+    });
   };
 
   const updateArrayItem = (path: string, index: number, value: any) => {
-    const newSettings = { ...localSettings } as any;
-    const keys = path.split('.');
-    let current: any = newSettings;
-    for (let i = 0; i < keys.length; i++) {
-      current = current[keys[i]];
-    }
-    if (Array.isArray(current)) {
-      current[index] = value;
-      setLocalSettings({ ...newSettings });
-    }
+    setLocalSettings(prev => {
+      const next = { ...prev } as any;
+      const current = getNestedValue(next, path);
+      if (!Array.isArray(current)) return prev;
+      const updated = [...current];
+      updated[index] = value;
+      setNestedValue(next, path, updated);
+      return next;
+    });
   };
 
   const addArrayItem = (path: string, value: any) => {
-    const newSettings = { ...localSettings } as any;
-    const keys = path.split('.');
-    let current: any = newSettings;
-    for (let i = 0; i < keys.length; i++) {
-      current = current[keys[i]];
-    }
-    if (Array.isArray(current)) {
-      current.push(value);
-      setLocalSettings({ ...newSettings });
-    }
+    setLocalSettings(prev => {
+      const next = { ...prev } as any;
+      const current = getNestedValue(next, path);
+      const updated = Array.isArray(current) ? [...current, value] : [value];
+      setNestedValue(next, path, updated);
+      return next;
+    });
   };
 
   const removeArrayItem = (path: string, index: number) => {
-    const newSettings = { ...localSettings } as any;
-    const keys = path.split('.');
-    let current: any = newSettings;
-    for (let i = 0; i < keys.length; i++) {
-      current = current[keys[i]];
-    }
-    if (Array.isArray(current)) {
-      current.splice(index, 1);
-      setLocalSettings({ ...newSettings });
-    }
+    setLocalSettings(prev => {
+      const next = { ...prev } as any;
+      const current = getNestedValue(next, path);
+      if (!Array.isArray(current)) return prev;
+      const updated = current.filter((_: any, i: number) => i !== index);
+      setNestedValue(next, path, updated);
+      return next;
+    });
   };
 
+
+  const statusOptions: Array<{ value: Order['status']; label: string }> = [
+    { value: 'Pending', label: isRtl ? 'قيد الانتظار' : 'Pending' },
+    { value: 'Processing', label: isRtl ? 'قيد المعالجة' : 'Processing' },
+    { value: 'Shipped', label: isRtl ? 'تم الشحن' : 'Shipped' },
+    { value: 'Delivered', label: isRtl ? 'تم التسليم' : 'Delivered' },
+    { value: 'Cancelled', label: isRtl ? 'ملغي' : 'Cancelled' }
+  ];
+
+  const activeTabLabel = {
+    dashboard: t.dashboard,
+    products: t.products,
+    orders: t.orders,
+    categories: t.categories,
+    settings: t.settings
+  }[activeTab];
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row" dir={isRtl ? 'rtl' : 'ltr'}>
@@ -148,7 +175,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <h2 className="text-lg font-bold tracking-tight text-gray-900">{settings.name}</h2>
         </div>
         <nav className="flex-1 p-4 space-y-1">
-          {[{ id: 'dashboard', icon: LayoutDashboard, label: t.dashboard }, { id: 'products', icon: Package, label: t.products }, { id: 'orders', icon: ShoppingBag, label: t.orders }, { id: 'categories', icon: Grid, label: t.categories }, { id: 'settings', icon: Settings, label: t.settings }].map((item) => (
+          {[{ id: 'dashboard', icon: Sparkles, label: t.dashboard }, { id: 'products', icon: Boxes, label: t.products }, { id: 'orders', icon: ClipboardList, label: t.orders }, { id: 'categories', icon: Layers3, label: t.categories }, { id: 'settings', icon: Settings2, label: t.settings }].map((item) => (
             <button key={item.id} onClick={() => setActiveTab(item.id as any)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === item.id ? 'bg-brand-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}><item.icon size={18} /><span>{item.label}</span></button>
           ))}
           <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 mt-10"><LogOut size={18} /><span>Logout</span></button>
@@ -157,7 +184,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       <main className="flex-1 overflow-y-auto p-8">
         <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-black capitalize">{activeTab}</h1>
+            <h1 className="text-3xl font-black capitalize">{activeTabLabel}</h1>
           {(activeTab === 'settings' || activeTab === 'categories') && (
             <Button onClick={() => onUpdateSettings(localSettings)} className="gap-2 shadow-none hover:shadow-none transition-none"><Save size={16}/> {t.save}</Button>
           )}
@@ -388,6 +415,76 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center"><Package /></div>
                 <div><p className="text-xs text-gray-400 font-bold uppercase">Products</p><p className="text-2xl font-black">{products.length}</p></div>
              </div>
+          </div>
+        )}
+
+        {activeTab === 'orders' && (
+          <div className="space-y-8 max-w-5xl pb-20">
+            <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+              <div className="flex items-center justify-between gap-4 border-b border-gray-50 pb-4">
+                <h3 className="text-lg font-bold">{isRtl ? 'الطلبات' : 'Orders'}</h3>
+                <span className="text-xs font-bold text-gray-400">{orders.length} {isRtl ? 'طلب' : 'items'}</span>
+              </div>
+              {orders.length === 0 ? (
+                <div className="py-10 text-center text-sm text-gray-400">
+                  {isRtl ? 'لا توجد طلبات بعد' : 'No orders yet'}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {orders.map((order) => (
+                    <div key={order.id} className="border border-gray-100 rounded-2xl p-5 space-y-4">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-400 font-bold uppercase">{isRtl ? 'طلب' : 'Order'} #{order.id}</p>
+                          <p className="text-sm font-bold text-gray-900">{order.customer?.name || (isRtl ? 'بدون اسم' : 'No name')}</p>
+                          <p className="text-xs text-gray-500">{order.customer?.phone || (isRtl ? 'بدون رقم' : 'No phone')}</p>
+                          {order.customer?.address && (
+                            <p className="text-xs text-gray-400">{order.customer.address}</p>
+                          )}
+                        </div>
+                        <div className="text-right space-y-1">
+                          <p className="text-xs text-gray-400 font-bold uppercase">{isRtl ? 'الإجمالي' : 'Total'}</p>
+                          <p className="text-lg font-black text-gray-900">{order.total} {localSettings.currency || 'YER'}</p>
+                          {order.date && (
+                            <p className="text-xs text-gray-400">{order.date}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <Package size={14} />
+                          <span>{isRtl ? 'المنتجات' : 'Items'}: {order.items.length}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Banknote size={14} />
+                          <span>{isRtl ? 'الدفع' : 'Payment'}: {order.paymentMethod}</span>
+                        </div>
+                        {order.deliveryFee != null && (
+                          <div className="flex items-center gap-2">
+                            <Truck size={14} />
+                            <span>{isRtl ? 'التوصيل' : 'Delivery'}: {order.deliveryFee}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col md:flex-row md:items-center gap-3">
+                        <label className="text-xs font-bold text-gray-500 uppercase">{isRtl ? 'حالة الطلب' : 'Status'}</label>
+                        <select
+                          value={order.status}
+                          onChange={e => onUpdateOrderStatus(order.id, e.target.value as Order['status'])}
+                          className="w-full md:w-56 bg-gray-50 border border-gray-200 rounded-xl p-2 text-sm"
+                        >
+                          {statusOptions.map(option => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

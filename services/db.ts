@@ -1,5 +1,16 @@
 import { Product, StoreSettings, Order, User } from '../types';
-import { fetchJson, authFetch } from '../src/api';
+import { fetchProductsFromFirestore, upsertProductToFirestore, deleteProductFromFirestore } from '../src/firebase';
+import {
+  createOrder,
+  getUserOrders,
+  updateOrderStatus,
+  getUserProfile,
+  createUserProfile,
+  updateUserProfile,
+  getAllOrders,
+  getStoreSettings,
+  saveStoreSettings
+} from './firestoreService';
 
 const safeJsonParse = <T,>(value: any, fallback: T): T => {
   try {
@@ -72,9 +83,8 @@ const normalizeOrder = (o: any): Order => {
 
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
-    const res = await fetchJson('/products');
-    const list = Array.isArray(res) ? res : [];
-    return list.map(normalizeProduct);
+    const list = await fetchProductsFromFirestore();
+    return Array.isArray(list) ? list.map(normalizeProduct) : [];
   } catch (error) {
     console.warn('Failed to fetch products:', error);
     return [];
@@ -85,36 +95,23 @@ export const addProductToDb = async (p: Product) => {
   const sku = (p as any).sku || `SKU-${p.id || Date.now()}`;
   const images = p.images && p.images.length ? p.images : (p.image ? [p.image] : []);
   const payload = {
+    ...p,
     sku,
-    name: p.name,
-    description: p.description || '',
-    price: Number(p.price || 0),
     images,
-    inStock: Number(p.stock || 0),
-    category: p.category || '',
-    subCategory: p.subCategory || '',
-    productLink: p.productLink || '',
-    sizes: p.sizes || [],
-    sizeIcons: p.sizeIcons || [],
-    colors: p.colors || [],
-    colorIcons: p.colorIcons || []
-  };
-  const res = await authFetch('/products', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) throw new Error('Failed to add product');
+    inStock: Number(p.stock || 0)
+  } as any;
+  const ok = await upsertProductToFirestore(payload);
+  if (!ok) throw new Error('Failed to add product');
 };
 
 export const removeProductFromDb = async (id: number) => {
-  const res = await authFetch(`/products/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Failed to remove product');
+  const ok = await deleteProductFromFirestore(id);
+  if (!ok) throw new Error('Failed to remove product');
 };
 
 export const fetchSettings = async (): Promise<StoreSettings | null> => {
   try {
-    const res = await fetchJson('/settings');
+    const res = await getStoreSettings();
     return res && typeof res === 'object' ? (res as StoreSettings) : null;
   } catch (error) {
     console.warn('Failed to fetch settings:', error);
@@ -123,22 +120,18 @@ export const fetchSettings = async (): Promise<StoreSettings | null> => {
 };
 
 export const saveSettingsToDb = async (s: StoreSettings) => {
-  const res = await authFetch('/settings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(s)
-  });
-  if (!res.ok) throw new Error('Failed to save settings');
+  const ok = await saveStoreSettings(s);
+  if (!ok) throw new Error('Failed to save settings');
 };
 
 export const fetchOrders = async (userId?: string, isAdmin?: boolean): Promise<Order[]> => {
   try {
     if (isAdmin) {
-      const res = await fetchJson('/admin/orders');
+      const res = await getAllOrders();
       return Array.isArray(res) ? res.map(normalizeOrder) : [];
     }
     if (!userId) return [];
-    const res = await fetchJson(`/orders/${userId}`);
+    const res = await getUserOrders(userId);
     return Array.isArray(res) ? res.map(normalizeOrder) : [];
   } catch (error) {
     console.warn('Failed to fetch orders:', error);
@@ -147,45 +140,32 @@ export const fetchOrders = async (userId?: string, isAdmin?: boolean): Promise<O
 };
 
 export const addOrderToDb = async (o: Order) => {
-  const items = o.items.map(i => ({ productId: Number(i.id), quantity: Number(i.quantity || 1), price: Number(i.discountPrice || i.price || 0) }));
+  const items = o.items.map(i => ({ productId: String(i.id), quantity: Number(i.quantity || 1), price: Number(i.discountPrice || i.price || 0) }));
   const payload = {
-    userId: o.userId ? Number(o.userId) : null,
     items,
     total: Number(o.total || 0),
     paymentMethod: o.paymentMethod,
-    customer: o.customer,
-    status: 'pending'
+    customer: o.customer
   };
-  const res = await authFetch('/orders/create', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) throw new Error('Failed to place order');
+  const orderId = await createOrder(o.userId || 'guest', payload);
+  if (!orderId) throw new Error('Failed to place order');
 };
 
 export const updateOrderStatusInDb = async (id: string, status: Order['status']) => {
-  const res = await authFetch(`/admin/orders/${id}/status`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status })
-  });
-  if (!res.ok) throw new Error('Failed to update order status');
+  await updateOrderStatus(id, status);
 };
 
 // --- USER PROFILE FUNCTIONS (backend) ---
 export const saveUserProfile = async (user: User) => {
-  const res = await authFetch(`/users/${user.id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(user)
-  });
-  if (!res.ok) throw new Error('Failed to save user profile');
+  if (!user?.id) throw new Error('User ID is required');
+  const existing = await getUserProfile(user.id).catch(() => null);
+  if (existing) await updateUserProfile(user.id, user as any);
+  else await createUserProfile(user.id, user as any);
 };
 
 export const fetchUserProfile = async (userId: string): Promise<User | null> => {
   try {
-    const res = await fetchJson(`/users/${userId}`);
+    const res = await getUserProfile(userId);
     return res && typeof res === 'object' ? (res as User) : null;
   } catch {
     return null;

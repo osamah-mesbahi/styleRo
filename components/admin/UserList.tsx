@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
-import { fetchJson } from '../../src/api';
+import { getAllUsers } from '../../services/firestoreService';
 
 const UserList: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -27,7 +27,7 @@ const UserList: React.FC = () => {
     URL.revokeObjectURL(link.href);
   };
   useEffect(() => {
-    fetchJson('/admin/users').then(j => { if (Array.isArray(j)) setUsers(j); }).catch(() => {});
+    getAllUsers().then(j => { if (Array.isArray(j)) setUsers(j); }).catch(() => {});
   }, []);
 
   const normalized = search.trim().toLowerCase();
