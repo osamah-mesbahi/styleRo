@@ -65,7 +65,8 @@ const INITIAL_SETTINGS: StoreSettings = {
     hero: { enabled: true, title: "Summer Beauty Sale", subtitle: "Up to 50% off on premium brands", image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=1920" },
     categories: { enabled: true, womenImage: "", menImage: "" },
     featured: { enabled: true, title: "Best Sellers" }
-  }
+  },
+  banners: []
 };
 
 const translations = {
@@ -593,14 +594,15 @@ export const App: React.FC = () => {
         )}
 
         {(view === 'SHOP' || searchQuery) && (
-          <div className="max-w-[1400px] mx-auto px-4 py-8">
-            <h2 className="text-2xl font-bold mb-6">{searchQuery ? `"${searchQuery}"` : (selectedCategory || t.shop)}</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {displayedProducts.map(p => (
-                 <ProductCard key={p.id} product={p} onAddToCart={addToCart} onClick={setSelectedProduct} formattedPrice={<span className="font-bold">{p.discountPrice || p.price} {isRtl ? 'ر.ي' : 'YER'}</span>} addToCartLabel={t.addToCart} />
-              ))}
-            </div>
-          </div>
+          <Shop
+            products={products}
+            storeSettings={storeSettings}
+            selectedCategory={selectedCategory}
+            searchQuery={searchQuery}
+            onAddToCart={addToCart}
+            onProductClick={setSelectedProduct}
+            language={language}
+          />
         )}
 
         {view === 'ORDERS' && user && (
