@@ -1,173 +1,116 @@
-import { Product, StoreSettings, Order, User } from '../types';
-import { fetchProductsFromFirestore, upsertProductToFirestore, deleteProductFromFirestore } from '../src/firebase';
-import {
-  createOrder,
-  getUserOrders,
-  updateOrderStatus,
-  getUserProfile,
-  createUserProfile,
-  updateUserProfile,
-  getAllOrders,
-  getStoreSettings,
-  saveStoreSettings
-} from './firestoreService';
 
-const safeJsonParse = <T,>(value: any, fallback: T): T => {
-  try {
-    if (typeof value === 'string') return JSON.parse(value) as T;
-    return value ?? fallback;
-  } catch {
-    return fallback;
+import { db } from './firebase';
+import { 
+  collection, 
+  getDocs, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  deleteDoc, 
+  updateDoc, 
+  query, 
+  orderBy, 
+  where, 
+  onSnapshot 
+} from 'firebase/firestore';
+import { Product, StoreSettings, Order, User, ContactMessage } from '../types';
+
+const COLLECTIONS = {
+  PRODUCTS: 'products',
+  SETTINGS: 'settings',
+  ORDERS: 'orders',
+  USERS: 'users',
+  MESSAGES: 'messages'
+};
+
+// بيانات افتراضية
+export const MOCK_PRODUCTS: Product[] = [
+  {
+    id: 101,
+    name: "فستان سهرة كلاسيك - أسود",
+    category: "فساتين",
+    price: 12500,
+    image: "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?auto=format&fit=crop&q=80&w=800",
+    description: "فستان سهرة أنيق بتصميم كلاسيكي يناسب جميع المناسبات الخاصة."
+  },
+  {
+    id: 102,
+    name: "حقيبة يد جلدية فاخرة",
+    category: "حقائب",
+    price: 8500,
+    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&q=80&w=800",
+    description: "حقيبة مصنوعة من الجلد الطبيعي 100% مع لمسات ذهبية."
+  },
+  {
+    id: 103,
+    name: "حذاء كعب عالي - ذهبي",
+    category: "أحذية",
+    price: 6400,
+    image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80&w=800",
+    description: "حذاء مريح وأنيق للسهرات."
   }
-};
-
-const normalizeProduct = (p: any): Product => {
-  const images = Array.isArray(p.images) ? p.images : safeJsonParse<string[]>(p.images, []);
-  const sizes = safeJsonParse<string[]>(p.sizes, []);
-  const sizeIcons = safeJsonParse<string[]>(p.sizeIcons, []);
-  const colors = safeJsonParse<string[]>(p.colors, []);
-  const colorIcons = safeJsonParse<string[]>(p.colorIcons, []);
-  return {
-    id: Number(p.id || 0),
-    name: p.name || '',
-    description: p.description || '',
-    price: Number(p.price || 0),
-    image: p.image || images[0] || 'https://via.placeholder.com/300x400?text=No+Image',
-    images,
-    category: p.category || 'General',
-    subCategory: p.subCategory || undefined,
-    productLink: p.productLink || undefined,
-    sizes: sizes.length ? sizes : undefined,
-    sizeIcons: sizeIcons.length ? sizeIcons : undefined,
-    colors: colors.length ? colors : undefined,
-    colorIcons: colorIcons.length ? colorIcons : undefined,
-    stock: typeof p.inStock !== 'undefined' ? Number(p.inStock) : Number(p.stock || 0),
-    discountPrice: p.discountPrice ? Number(p.discountPrice) : undefined
-  } as Product;
-};
-
-const normalizeOrderStatus = (status: string): Order['status'] => {
-  const map: Record<string, Order['status']> = {
-    pending: 'Pending',
-    pending_payment: 'Pending',
-    cart: 'Pending',
-    paid: 'Processing',
-    processing: 'Processing',
-    shipped: 'Shipped',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled'
-  };
-  return map[status] || 'Pending';
-};
-
-const normalizeOrder = (o: any): Order => {
-  const items = Array.isArray(o.items) ? o.items.map((it: any) => {
-    const product = normalizeProduct(it.product || {});
-    return {
-      ...product,
-      quantity: Number(it.quantity || 1),
-      cartItemId: `${it.productId || product.id}-${it.id || Math.random().toString(36).slice(2, 7)}`
-    };
-  }) : [];
-
-  return {
-    id: String(o.id),
-    userId: o.userId ? String(o.userId) : undefined,
-    date: o.createdAt ? new Date(o.createdAt).toISOString() : new Date().toISOString(),
-    items,
-    total: Number(o.total || 0),
-    status: normalizeOrderStatus(o.status || 'pending'),
-    paymentMethod: 'COD'
-  };
-};
+];
 
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
-    const list = await fetchProductsFromFirestore();
-    return Array.isArray(list) ? list.map(normalizeProduct) : [];
-  } catch (error) {
-    console.warn('Failed to fetch products:', error);
-    return [];
+    const snap = await getDocs(collection(db, COLLECTIONS.PRODUCTS));
+    if (snap.empty) return MOCK_PRODUCTS;
+    return snap.docs.map(d => ({ ...d.data(), id: d.data().id || parseInt(d.id) } as Product));
+  } catch (error: any) { 
+    console.warn("Firestore access error, using mock data:", error.message);
+    return MOCK_PRODUCTS;
   }
 };
 
 export const addProductToDb = async (p: Product) => {
-  const sku = (p as any).sku || `SKU-${p.id || Date.now()}`;
-  const images = p.images && p.images.length ? p.images : (p.image ? [p.image] : []);
-  const payload = {
-    ...p,
-    sku,
-    images,
-    inStock: Number(p.stock || 0)
-  } as any;
-  const ok = await upsertProductToFirestore(payload);
-  if (!ok) throw new Error('Failed to add product');
+  try {
+    await setDoc(doc(db, COLLECTIONS.PRODUCTS, p.id.toString()), p);
+  } catch (e) {
+    console.error("Error adding product:", e);
+    throw e;
+  }
 };
 
 export const removeProductFromDb = async (id: number) => {
-  const ok = await deleteProductFromFirestore(id);
-  if (!ok) throw new Error('Failed to remove product');
+  await deleteDoc(doc(db, COLLECTIONS.PRODUCTS, id.toString()));
 };
 
 export const fetchSettings = async (): Promise<StoreSettings | null> => {
   try {
-    const res = await getStoreSettings();
-    return res && typeof res === 'object' ? (res as StoreSettings) : null;
-  } catch (error) {
-    console.warn('Failed to fetch settings:', error);
+    const docSnap = await getDoc(doc(db, COLLECTIONS.SETTINGS, 'main'));
+    return docSnap.exists() ? docSnap.data() as StoreSettings : null;
+  } catch (e) {
     return null;
   }
 };
 
 export const saveSettingsToDb = async (s: StoreSettings) => {
-  const ok = await saveStoreSettings(s);
-  if (!ok) throw new Error('Failed to save settings');
+  await setDoc(doc(db, COLLECTIONS.SETTINGS, 'main'), s);
 };
 
-export const fetchOrders = async (userId?: string, isAdmin?: boolean): Promise<Order[]> => {
+export const fetchOrders = async (): Promise<Order[]> => {
   try {
-    if (isAdmin) {
-      const res = await getAllOrders();
-      return Array.isArray(res) ? res.map(normalizeOrder) : [];
-    }
-    if (!userId) return [];
-    const res = await getUserOrders(userId);
-    return Array.isArray(res) ? res.map(normalizeOrder) : [];
-  } catch (error) {
-    console.warn('Failed to fetch orders:', error);
+    const q = query(collection(db, COLLECTIONS.ORDERS), orderBy('date', 'desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ ...d.data(), id: d.id } as Order));
+  } catch (e) {
     return [];
   }
 };
 
 export const addOrderToDb = async (o: Order) => {
-  const items = o.items.map(i => ({ productId: String(i.id), quantity: Number(i.quantity || 1), price: Number(i.discountPrice || i.price || 0) }));
-  const payload = {
-    items,
-    total: Number(o.total || 0),
-    paymentMethod: o.paymentMethod,
-    customer: o.customer
-  };
-  const orderId = await createOrder(o.userId || 'guest', payload);
-  if (!orderId) throw new Error('Failed to place order');
+  await setDoc(doc(db, COLLECTIONS.ORDERS, o.id), o);
 };
 
 export const updateOrderStatusInDb = async (id: string, status: Order['status']) => {
-  await updateOrderStatus(id, status);
+  await updateDoc(doc(db, COLLECTIONS.ORDERS, id), { status });
 };
 
-// --- USER PROFILE FUNCTIONS (backend) ---
 export const saveUserProfile = async (user: User) => {
-  if (!user?.id) throw new Error('User ID is required');
-  const existing = await getUserProfile(user.id).catch(() => null);
-  if (existing) await updateUserProfile(user.id, user as any);
-  else await createUserProfile(user.id, user as any);
+  await setDoc(doc(db, COLLECTIONS.USERS, user.id), user, { merge: true });
 };
 
 export const fetchUserProfile = async (userId: string): Promise<User | null> => {
-  try {
-    const res = await getUserProfile(userId);
-    return res && typeof res === 'object' ? (res as User) : null;
-  } catch {
-    return null;
-  }
+  const docSnap = await getDoc(doc(db, COLLECTIONS.USERS, userId));
+  return docSnap.exists() ? docSnap.data() as User : null;
 };

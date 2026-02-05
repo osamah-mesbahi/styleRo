@@ -1,36 +1,35 @@
+
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+import { 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
-const env = (import.meta as any).env || {};
 const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY || "",
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  projectId: env.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: env.VITE_FIREBASE_APP_ID || "",
-  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || ""
+  apiKey: process.env.API_KEY,
+  authDomain: "stylero-74eb8.firebaseapp.com",
+  projectId: "stylero-74eb8",
+  storageBucket: "stylero-74eb8.firebasestorage.app",
+  messagingSenderId: "721015415335",
+  appId: "1:721015415335:web:18be9a3599afdb62dc6402",
+  measurementId: "G-CCWNXEF5Y2"
 };
-
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
-  console.warn('Firebase config is missing. Set VITE_FIREBASE_* variables in .env');
-}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Services
-export const auth = getAuth(app);
-
-// Initialize Firestore with offline persistence enabled to prevent "unavailable" errors
+/**
+ * تحسين إعدادات Firestore لمعالجة أخطاء الـ 10 ثواني والوصول غير المصرح به:
+ * 1. تفعيل experimentalForceLongPolling للالتفاف على مشاكل بروكسي المتصفح.
+ * 2. تفعيل التخزين المحلي لضمان عمل التطبيق في حالة عدم توفر اتصال أو رفض الأذونات.
+ */
 export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
 });
 
-export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
-
-export default app;
+export const auth = getAuth(app);

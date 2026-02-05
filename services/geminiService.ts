@@ -4,13 +4,7 @@ import { Product } from "../types";
 let chatSession: Chat | null = null;
 
 export const initializeChat = (products: Product[]) => {
-  const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.VITE_API_KEY || '';
-  if (!apiKey) {
-    console.warn('Gemini API key is missing. Set VITE_GEMINI_API_KEY in .env');
-    chatSession = null;
-    return;
-  }
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const productContext = products.map(p => {
     const specs = [
@@ -50,7 +44,7 @@ export const initializeChat = (products: Product[]) => {
 
 export const sendMessageToGemini = async (message: string): Promise<string> => {
   if (!chatSession) {
-    return "المساعد غير مفعّل حالياً. يرجى التحقق من إعدادات الاتصال.";
+    throw new Error("Chat session not initialized");
   }
 
   try {

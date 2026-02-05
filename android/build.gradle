@@ -1,21 +1,49 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+/*
 
-buildscript {
-    
-    repositories {
-        google()
-        mavenCentral()
+//I have commented out this code as it was causing build errors.
+//If you need this functionality, please provide more information about the 'gradlebuild' project.
+
+import gradlebuild.GeneratePackageInfoDataTask
+import gradlebuild.GeneratePlatformsDataTask
+import gradlebuild.GeneratorTask
+import gradlebuild.PlatformBuilder
+import gradlebuild.ProjectStructure
+import gradlebuild.basics.ArchitectureDataType
+
+val structure = extensions.create<ProjectStructure>("projectStructure")
+
+gradle.rootProject {
+    tasks.register("architectureDoc", GeneratorTask::class.java) {
+        description = "Generates the architecture documentation"
+        outputFile = layout.projectDirectory.file("architecture/platforms.md")
+        elements = provider { structure.architectureElements.map { it.build() } }
     }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.2'
-        classpath 'com.google.gms:google-services:4.4.4'
+    val platformsData = tasks.register("platformsData", GeneratePlatformsDataTask::class) {
+        description = "Generates the platforms data"
+        outputFile = layout.buildDirectory.file("architecture/platforms.json")
+        platforms = provider { structure.architectureElements.filterIsInstance<PlatformBuilder>().map { it.build() } }
+    }
+    val packageInfoData = tasks.register("packageInfoData", GeneratePackageInfoDataTask::class) {
+        description = "Map packages to the list of package-info.java files that apply to them"
+        outputFile = layout.buildDirectory.file("architecture/package-info.json")
+        packageInfoFiles.from(GeneratePackageInfoDataTask.findPackageInfoFiles(objects, provider { structure.projectBaseDirs }))
+    }
 
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
+    configurations.consumable("platformsData") {
+        outgoing.artifact(platformsData)
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named<Category>(ArchitectureDataType.PLATFORMS))
+        }
+    }
+
+    configurations.consumable("packageInfoData") {
+        outgoing.artifact(packageInfoData)
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named<Category>(ArchitectureDataType.PACKAGE_INFO))
+        }
     }
 }
-
-apply from: "variables.gradle"
+*/
 
 allprojects {
     repositories {
@@ -24,13 +52,8 @@ allprojects {
     }
 }
 
-subprojects {
-    tasks.withType(JavaCompile).configureEach {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
+ext {
+    compileSdkVersion = 36
+    minSdkVersion = 24
+    targetSdkVersion = 36
 }

@@ -1,0 +1,7 @@
+{
+	"appId": "com.stylero.app",
+	"appName": "Stylero",
+	"webDir": "dist",
+	"bundledWebRuntime": false,
+	"packageClassList": []
+}

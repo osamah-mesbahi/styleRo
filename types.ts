@@ -1,88 +1,63 @@
 
 export type Category = string;
 
-export interface StoreCategory {
+export interface ProductSpec {
+  name: string;
+  value: string;
+}
+
+export interface ProductOption {
+  id: string;
+  color?: string;
+  size?: string;
+  price: number;
+  stock: number;
+}
+
+export interface Story {
+  id: string;
+  image: string;
+  type: 'image' | 'video';
+  createdAt: any;
+}
+
+export interface StoryGroup {
   id: string;
   name: string;
-  nameAr?: string; // Arabic Name
-  image: string;
-  icon?: string;
-  branches: string[];
-  branchesAr?: string[]; // Arabic Branches
+  thumbnail: string;
+  stories: Story[];
+  createdAt: any;
 }
 
 export interface GlobalStore {
   id: string;
   name: string;
+  url: string;
   image: string;
-  icon?: string;
-  url: string;
+  description?: string;
+  createdAt?: any;
 }
-
-export interface ExternalStore {
-  id?: string;
-  name: string;
-  logo: string;
-  url: string;
-}
-
-export enum OrderStatus {
-  PENDING = 'PENDING',
-  PAID = 'PAID',
-  PROCESSING = 'PROCESSING',
-  SHIPPED = 'SHIPPED',
-  COMPLETED = 'COMPLETED'
-}
-
-export interface Banner {
-  id: string;
-  title?: string;
-  subtitle?: string;
-  image?: string;
-  ctaLabel?: string;
-  ctaLink?: string;
-}
-
-export interface DeliveryFee {
-  city: string;
-  fee: number;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  isAdmin?: boolean;
-}
-
-export type PaymentMethod = 'COD' | 'KURIMI' | 'WALLET' | 'TRANSFER';
 
 export interface Product {
   id: number;
   name: string;
   category: Category;
-  subCategory?: string;
-  storeName?: string; 
-  productLink?: string;
-  cartLink?: string; 
-  price: number;
-  discountPrice?: number; 
+  brand?: string;
+  price: number; // السعر الأصلي
+  discountPrice?: number; // السعر بعد الخصم
   image: string;
   images?: string[];
   description: string;
-  sizes?: string[];
-  sizeIcons?: string[];
-  colors?: string[];
-  colorIcons?: string[];
-  material?: string;
-  stock?: number;
+  specs?: ProductSpec[];
+  options?: ProductOption[];
   isGlobalOrder?: boolean;
-  globalStoreId?: string;
-  orderNotes?: string;
-  selectedSize?: string;
-  selectedColor?: string;
+  globalStoreId?: string; // معرف المتجر العالمي المرتبط
+  createdAt?: any;
+  sizes?: string[];
+  colors?: string[];
+  material?: string; // المكونات أو الخامة
+  dimensions?: string; // الحجم أو الأبعاد
+  stock?: number;
 }
 
 export interface CartItem extends Product {
@@ -92,88 +67,98 @@ export interface CartItem extends Product {
   selectedColor?: string;
 }
 
-export interface Order {
+export interface Currency {
   id: string;
-  userId?: string;
-  date: string;
-  items: CartItem[];
-  total: number;
-  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
-  paymentMethod: PaymentMethod;
-  customer?: {
-    name: string;
-    phone: string;
-    address?: string;
-    city?: string;
-  };
-  deliveryFee?: number;
-  paymentReceipt?: string;
+  name: string;
+  symbol: string;
+  rate: number;
+  active: boolean;
+  isBase?: boolean;
 }
 
-export interface ChatMessage {
-  role: 'user' | 'model';
-  text: string;
-}
-
-export interface DeliveryRule {
-  city: string;
-  cityAr?: string; // Arabic City Name
+export interface DeliveryCity {
+  id: string;
+  name: string;
   fee: number;
-  depositRequired: boolean;
-  depositPercentage?: number;
+  time: string;
   active: boolean;
 }
 
-export interface SocialMedia {
-  facebook?: string;
-  instagram?: string;
-  twitter?: string;
-  whatsapp?: string;
-  email?: string;
+export interface PaymentMethod {
+  id: string;
+  type: string;
+  provider: string;
+  accountName: string;
+  accountNumber: string;
+  active: boolean;
 }
 
 export interface StoreSettings {
   name: string;
-  currency: 'SAR' | 'YER'; 
-  exchangeRate: number;
+  description: string;
+  primaryColor: string;
   logo: string;
-  colors: {
-    primary: string;
-    accent: string;
+  notificationBar: {
+    enabled: boolean;
+    text: string;
+    link: string;
+    bgColor: string;
+    textColor: string;
   };
-  socialMedia: SocialMedia;
-  storeCategories: StoreCategory[];
-  globalStores: GlobalStore[]; 
-  deliveryRules: DeliveryRule[];
-  paymentInstructions?: {
-    kurimi?: { name: string; account: string };
-    wallet?: { name: string; number: string; type: string };
+  features: {
+    maintenance: boolean;
+    whatsappOrder: boolean;
+    sheinOrder: boolean;
+    externalStores: boolean;
+    trackingPage: boolean;
+    reviews: boolean;
+    coupons: boolean;
   };
-  paymentMethods?: Array<{
-    label: string;
-    name: string;
-    number: string;
-    type?: string;
-    icon?: string;
-  }>;
-  sections: {
-    hero: { enabled: boolean; title: string; subtitle: string; image: string };
-    categories: { enabled: boolean; womenImage: string; menImage: string };
-    featured: { enabled: boolean; title: string };
+  currencies: Currency[];
+  deliveryCities: DeliveryCity[];
+  paymentMethods: PaymentMethod[];
+  contactInfo: {
+    phone: string;
+    whatsapp: string;
+    email: string;
+    address: string;
   };
-  storeName?: string;
-  primaryColor?: string;
-  bgColor?: string;
-  fontFamily?: string;
-  phone?: string;
-  email?: string;
-  iconSize?: number;
-  iconRadius?: number;
-  banners?: Banner[];
-  adminApiKey?: string;
-  facebook?: string;
-  instagram?: string;
-  twitter?: string;
 }
 
-export type ViewState = 'HOME' | 'SHOP' | 'PRODUCT_DETAILS' | 'ADMIN_LOGIN' | 'ADMIN_DASHBOARD' | 'ORDERS' | 'USER_LOGIN' | 'GLOBAL_ORDER';
+export interface Order {
+  id: string;
+  customerName: string;
+  phone: string;
+  address: string;
+  city: string;
+  status: 'new' | 'processing' | 'shipped' | 'completed' | 'cancelled';
+  items: any[];
+  total: number;
+  createdAt: any;
+}
+
+export interface StoreCategory {
+  id: string;
+  name: string;
+  slug: string;
+  parent?: string;
+  image: string;
+}
+
+export interface User {
+  id: string;
+  name?: string;
+  email?: string;
+  photoURL?: string;
+  role?: 'admin' | 'user';
+}
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+  createdAt: any;
+  read?: boolean;
+}

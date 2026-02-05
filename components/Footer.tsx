@@ -1,93 +1,112 @@
 
 import React from 'react';
-import { Instagram, Facebook, Music, Phone, Mail, MapPin, Globe, Coins } from 'lucide-react';
-import { StoreSettings } from '../types';
+import { Twitter, Facebook, Instagram, Phone, MapPin, Mail, Send, ChevronLeft } from 'lucide-react';
 
-interface FooterProps {
-  settings: StoreSettings;
-  language: 'en' | 'ar';
-  onToggleLanguage: () => void;
-  onToggleCurrency: () => void;
-}
-
-const Footer: React.FC<FooterProps> = ({ settings, language, onToggleLanguage, onToggleCurrency }) => {
-  const isRtl = language === 'ar';
+const Footer: React.FC = () => {
   return (
-    <footer className="bg-white border-t border-gray-100 pt-12 pb-6">
-      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-12 mb-12 text-right" dir="rtl">
-        <div className="col-span-1">
-          <h2 className="text-3xl font-extrabold mb-4">{settings.name}</h2>
-          <p className="text-gray-500 text-sm mb-6 leading-relaxed max-w-md">
-            وسيطكم الأول للطلب من أشهر المواقع العالمية وتوصيلها حتى باب بيتكم في اليمن. جودة، ثقة، وسرعة في التنفيذ لضمان أفضل تجربة تسوق.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <a href={settings.socialMedia?.instagram || '#'} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white transition">
-              <Instagram size={20} />
-            </a>
-            <a href={settings.socialMedia?.facebook || '#'} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white transition">
-              <Facebook size={20} />
-            </a>
-            <a href={settings.socialMedia?.twitter || '#'} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-800 hover:text-white transition">
-              <Music size={20} />
-            </a>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="font-bold mb-4 text-lg">تواصل معنا</h3>
-          <ul className="space-y-4 text-sm text-gray-500">
-            <li className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-pink-50 rounded-xl flex items-center justify-center text-primary">
-                <Mail size={20} />
-              </div>
-              <span className="font-bold">stylero.onlie@gmail.com</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-pink-50 rounded-xl flex items-center justify-center text-primary">
-                <MapPin size={20} />
-              </div>
-              <span className="font-bold">اليمن - صنعاء</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 pt-6 border-t border-gray-50 flex flex-col items-center gap-2">
-        <div className="flex flex-col md:flex-row justify-between w-full items-center gap-4 text-[10px] text-gray-400 font-medium">
-          <p>© 2024 {settings.name}. جميع الحقوق محفوظة.</p>
-          <div className="flex gap-4">
-            {/* تم حذف صور فيزا وماستركارد بناءً على طلب العميل */}
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onToggleLanguage}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs font-bold"
-            aria-label="Toggle language"
-          >
-            <Globe size={14} />
-            {isRtl ? 'EN' : 'AR'}
-          </button>
-          <button
-            type="button"
-            onClick={onToggleCurrency}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs font-bold"
-            aria-label="Toggle currency"
-          >
-            <Coins size={14} />
-            {settings.currency}
-          </button>
-        </div>
+    <footer className="bg-[#0f172a] text-white pt-16 pb-32 px-6 font-sans" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-16">
         
-        {/* توقيع مطور البرنامج بطريقة احترافية وغير متباينة */}
-        <div className="mt-4 flex items-center gap-2 opacity-30 hover:opacity-100 transition-opacity duration-500 cursor-default">
-          <div className="h-px w-8 bg-gray-300"></div>
-          <p className="text-[9px] font-bold text-gray-400 tracking-[0.2em] uppercase">
-            designed & Developed: <span className="text-gray-500">Osamah mesbahi</span>
-          </p>
-          <div className="h-px w-8 bg-gray-300"></div>
+        {/* Identity & Social */}
+        <div className="flex flex-col items-center text-center space-y-6">
+          <div className="flex items-center gap-3 bg-white/5 p-4 rounded-[2rem] border border-white/10">
+            <h2 className="text-3xl font-black italic tracking-tighter text-white">ستايل رو</h2>
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
+               <img src="https://stylero.online/logo.png" className="w-8 h-8 object-contain" alt="Logo" />
+            </div>
+          </div>
+          <p className="text-gray-400 text-sm font-bold">متجرك الأول للتسوق الإلكتروني والأناقة العصرية</p>
+          
+          <div className="flex gap-4">
+            {[Twitter, Facebook, Instagram].map((Icon, i) => (
+              <a key={i} href="#" className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-white/10 hover:bg-[#FF4500] hover:border-[#FF4500] transition-all text-gray-300 hover:text-white">
+                <Icon size={20} />
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          
+          {/* Quick Links */}
+          <div className="space-y-6">
+            <div className="flex flex-col">
+              <h3 className="text-lg font-black tracking-tighter">روابط سريعة</h3>
+              <div className="w-12 h-1 bg-[#FF4500] rounded-full mt-2"></div>
+            </div>
+            <ul className="space-y-4">
+              {['الرئيسية', 'أحدث المنتجات', 'خدمة شي إن', 'طلبات خاصة', 'تتبع الطلب', 'تواصل معنا'].map((link, i) => (
+                <li key={i}>
+                  <a href="#" className="text-gray-400 hover:text-white flex items-center gap-2 text-sm font-bold transition-all group">
+                    <ChevronLeft size={16} className="text-[#FF4500] group-hover:-translate-x-1 transition-transform" />
+                    {link}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact Us */}
+          <div className="space-y-6">
+            <div className="flex flex-col">
+              <h3 className="text-lg font-black tracking-tighter">تواصل معنا</h3>
+              <div className="w-12 h-1 bg-[#FF4500] rounded-full mt-2"></div>
+            </div>
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 group">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 group-hover:bg-[#FF4500] group-hover:text-white transition-all">
+                  <Phone size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-500 uppercase">اتصل بنا أو واتساب</p>
+                  <p className="text-sm font-black tracking-wider text-gray-200">967772728311+</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 group">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 group-hover:bg-[#FF4500] group-hover:text-white transition-all">
+                  <MapPin size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-500 uppercase">العنوان</p>
+                  <p className="text-sm font-black text-gray-200">صنعاء، اليمن</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 group">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 group-hover:bg-[#FF4500] group-hover:text-white transition-all">
+                  <Mail size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-500 uppercase">البريد الإلكتروني</p>
+                  <p className="text-sm font-black text-gray-200">stylero.online@gmail.com</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Newsletter */}
+          <div className="space-y-6">
+            <div className="flex flex-col">
+              <h3 className="text-lg font-black tracking-tighter">النشرة البريدية</h3>
+              <div className="w-12 h-1 bg-[#FF4500] rounded-full mt-2"></div>
+            </div>
+            <p className="text-gray-400 text-xs font-bold leading-relaxed">اشترك في نشرتنا البريدية للحصول على آخر العروض والمنتجات الحصرية.</p>
+            <div className="relative">
+              <input 
+                type="email" 
+                placeholder="بريدك الإلكتروني" 
+                className="w-full bg-white/5 border border-white/10 p-5 pr-6 rounded-2xl outline-none text-xs font-bold focus:border-[#FF4500] transition-all"
+              />
+              <button className="absolute left-2 top-2 bottom-2 bg-[#FF4500] text-white px-4 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
+                <Send size={18} className="rotate-180" />
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom copyright */}
+        <div className="pt-10 border-t border-white/5 text-center">
+          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">جميع الحقوق محفوظة لمتجر ستايل رو © 2026</p>
         </div>
       </div>
     </footer>
@@ -95,4 +114,3 @@ const Footer: React.FC<FooterProps> = ({ settings, language, onToggleLanguage, o
 };
 
 export default Footer;
-

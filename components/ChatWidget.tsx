@@ -1,159 +1,113 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Sparkles, ArrowLeft, ArrowRight } from 'lucide-react';
-import { ChatMessage } from '../types';
+import { MessageCircle, X, Send, Bot, Sparkles, Loader2 } from 'lucide-react';
 import { sendMessageToGemini } from '../services/geminiService';
 
-interface ChatWidgetProps {
-  language: 'en' | 'ar';
-}
-
-export const ChatWidget: React.FC<ChatWidgetProps> = ({ language }) => {
+const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const t = {
-    en: {
-      greeting: "Hi! I'm Eva, your AI Stylist. Looking for something specific or need outfit advice? ✨",
-      placeholder: "Ask Eva for fashion advice...",
-      title: "Stylero AI Stylist",
-      error: "Sorry, I'm having trouble connecting right now."
-    },
-    ar: {
-      greeting: "أهلاً! أنا إيفا، منسقة أزيائك الشخصية. هل تبحثين عن شيء محدد أو تحتاجين نصيحة؟ ✨",
-      placeholder: "اسأل إيفا عن الموضة...",
-      title: "مساعد ستايلرو الذكي",
-      error: "عذراً، أواجه مشكلة في الاتصال حالياً."
-    }
-  };
-  
-  const txt = t[language];
-  const isRtl = language === 'ar';
-
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  
-  useEffect(() => {
-    if (messages.length === 0) {
-        setMessages([{ role: 'model', text: txt.greeting }]);
-    }
-  }, [language]);
-
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const [messages, setMessages] = useState<{role: 'user' | 'bot', text: string}[]>([
+    { role: 'bot', text: 'أهلاً بك! أنا إيفا، مساعدتك الذكية في ستايل رو. كيف يمكنني مساعدتك في اختيار إطلالتك اليوم؟ 👗✨' }
+  ]);
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isOpen]);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
 
-  const getBubbleClass = (role: ChatMessage['role']) =>
-    role === 'user'
-      ? `bg-brand-black text-white ${isRtl ? 'rounded-bl-none' : 'rounded-br-none'}`
-      : `bg-white text-gray-800 ${isRtl ? 'rounded-br-none' : 'rounded-bl-none'}`;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
 
     const userMsg = input;
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-    setIsLoading(true);
+    setLoading(true);
 
     try {
       const response = await sendMessageToGemini(userMsg);
-      setMessages(prev => [...prev, { role: 'model', text: response }]);
+      setMessages(prev => [...prev, { role: 'bot', text: response }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: txt.error }]);
+      setMessages(prev => [...prev, { role: 'bot', text: 'عذراً، أواجه مشكلة بسيطة. حاولي مرة أخرى!' }]);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className={`fixed bottom-24 md:bottom-8 z-40 flex flex-col pointer-events-none left-5 items-start`} dir={isRtl ? 'rtl' : 'ltr'}>
-      {/* Chat Window */}
+    <div className="fixed bottom-24 left-4 z-[60] flex flex-col items-end" dir="rtl">
       {isOpen && (
-        <div className="pointer-events-auto mb-4 w-[350px] bg-white shadow-2xl rounded-3xl overflow-hidden border border-gray-100 flex flex-col h-[500px] transition-all animate-in slide-in-from-bottom-5 duration-300">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-purple-600 to-brand-accent p-5 flex justify-between items-center text-white">
-            <div className="flex items-center gap-3">
-              <div className="bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">
-                <Sparkles size={20} className="text-white" fill="white" />
-              </div>
-              <div>
-                 <span className="font-bold block text-sm">{txt.title}</span>
-                 <span className="text-[10px] text-white/80 flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span> Online</span>
-              </div>
-            </div>
+        <div className="mb-4 w-[85vw] sm:w-80 h-[450px] bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col animate-in slide-in-from-bottom-5">
+          <div className="bg-brand-black p-5 text-white flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-colors" aria-label="Back">
-                {isRtl ? <ArrowRight size={18} /> : <ArrowLeft size={18} />}
-              </button>
-              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-colors" aria-label="Close">
-                <X size={18} />
-              </button>
+              <div className="w-8 h-8 bg-brand-accent rounded-full flex items-center justify-center animate-pulse">
+                <Bot size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-black text-xs tracking-tighter italic">Eva AI</span>
+                <span className="text-[8px] opacity-60">متصلة الآن</span>
+              </div>
             </div>
+            <button onClick={() => setIsOpen(false)} className="hover:rotate-90 transition-transform p-1">
+              <X size={20} />
+            </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f4f4f5] no-scrollbar">
-            {messages.map((msg, idx) => {
-              const alignClass = msg.role === 'user' ? 'justify-end' : 'justify-start';
-              return (
-                <div key={idx} className={`flex ${alignClass}`}>
-                  <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm ${getBubbleClass(msg.role)}`}>
-                    {msg.text}
-                  </div>
+          <div ref={scrollRef} className="flex-1 p-4 overflow-y-auto bg-gray-50/30 space-y-4 no-scrollbar">
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
+                <div className={`p-3 max-w-[85%] text-[11px] font-bold leading-relaxed shadow-sm
+                  ${msg.role === 'user' 
+                    ? 'bg-brand-black text-white rounded-2xl rounded-tr-none' 
+                    : 'bg-white text-slate-700 rounded-2xl rounded-tl-none border border-gray-100'}`}>
+                  {msg.text}
                 </div>
-              );
-            })}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className={`bg-white p-3.5 rounded-2xl shadow-sm flex items-center gap-2 ${isRtl ? 'rounded-br-none' : 'rounded-bl-none'}`}>
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-end">
+                <div className="bg-white p-3 rounded-2xl rounded-tl-none border border-gray-100">
+                  <Loader2 size={14} className="animate-spin text-brand-accent" />
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <form onSubmit={handleSubmit} className="p-3 bg-white border-t border-gray-100">
-            <div className="relative flex items-center">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={txt.placeholder}
-                className={`w-full bg-gray-50 text-sm rounded-full py-3.5 focus:outline-none focus:ring-2 focus:ring-purple-100 focus:bg-white transition-all ${isRtl ? 'pl-12 pr-5' : 'pl-5 pr-12'}`}
-              />
-              <button 
-                type="submit" 
-                disabled={!input.trim() || isLoading}
-                className={`absolute p-2 bg-brand-black text-white rounded-full hover:bg-gray-800 disabled:opacity-50 disabled:hover:bg-brand-black transition-colors ${isRtl ? 'left-2' : 'right-2'}`}
-              >
-                <Send size={16} className={isRtl ? 'rotate-180' : ''} />
-              </button>
-            </div>
-          </form>
+          <div className="p-4 bg-white border-t border-gray-100 flex gap-2">
+            <input 
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="اسأليني عن الموضة..."
+              className="flex-1 bg-gray-50 rounded-xl px-4 py-3 text-[11px] font-bold outline-none focus:ring-1 focus:ring-brand-accent transition-all"
+            />
+            <button 
+              onClick={handleSend}
+              disabled={loading}
+              className="bg-brand-accent text-white p-3 rounded-xl hover:scale-105 transition-transform active:scale-90 disabled:opacity-50"
+            >
+              <Send size={18} className="rotate-180" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Toggle Button - Redesigned to be distinct from WhatsApp */}
-      <button
+      <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="pointer-events-auto group relative"
+        className="w-14 h-14 bg-brand-black text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group border-4 border-white"
       >
-        <div className="absolute inset-0 bg-purple-400 rounded-full blur opacity-40 group-hover:opacity-60 transition-opacity animate-pulse"></div>
-        <div className="relative bg-gradient-to-tr from-purple-600 to-pink-500 text-white w-14 h-14 rounded-full shadow-lg shadow-purple-500/30 flex items-center justify-center transform transition-transform group-hover:scale-105 active:scale-95">
-             {isOpen ? <X size={24} /> : <Sparkles size={24} fill="white" />}
-        </div>
+        {isOpen ? <X size={24} /> : (
+          <div className="relative">
+            <Sparkles size={24} className="text-brand-accent animate-pulse" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-brand-black"></span>
+          </div>
+        )}
       </button>
     </div>
   );
 };
+
+export default ChatWidget;
